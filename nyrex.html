@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nyrex — Revenue Intelligence for Newsletters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FAF7F0;
+  --parchment:#F2ECE0;
+  --parchment-mid:#EAE2D0;
+  --ink:#16120D;
+  --ink-mid:#3D3026;
+  --ink-muted:#6B5C4A;
+  --ink-light:#A08C78;
+  --forest:#0C1A10;
+  --forest-mid:#162B1E;
+  --forest-light:#214A30;
+  --forest-soft:#2D6342;
+  --gold:#B8803A;
+  --gold-mid:#CA9645;
+  --gold-light:#DFB35A;
+  --gold-bright:#F0CC7A;
+  --sage:#5A8272;
+  --sage-light:#7EA898;
+  --border:#DDD5C4;
+  --border-light:#EDE6D8;
+  --shadow:rgba(22,18,13,0.07);
+  --shadow-md:rgba(22,18,13,0.12);
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  overflow-x:hidden;
+  line-height:1.6;
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+  opacity:0.6;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:1.4rem 4rem;
+  display:flex;justify-content:space-between;align-items:center;
+  transition:all 0.35s ease;
+}
+nav.scrolled{
+  background:rgba(250,247,240,0.94);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border-light);
+  padding:1rem 4rem;
+  box-shadow:0 1px 20px var(--shadow);
+}
+.logo{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.7rem;font-weight:600;color:var(--ink);
+  letter-spacing:-0.03em;text-decoration:none;
+}
+.logo span{color:var(--gold)}
+.nav-links{display:flex;gap:2.5rem;list-style:none;align-items:center}
+.nav-links a{
+  text-decoration:none;color:var(--ink-muted);
+  font-size:0.85rem;font-weight:500;letter-spacing:0.01em;
+  transition:color 0.2s;
+}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  background:var(--forest)!important;color:var(--cream)!important;
+  padding:0.55rem 1.4rem;border-radius:7px;
+  font-size:0.82rem!important;font-weight:600!important;
+  transition:all 0.2s!important;
+}
+.nav-cta:hover{background:var(--forest-light)!important;transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:8rem 4rem 5rem;position:relative;overflow:hidden;
+}
+.hero-glow{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 70% 55% at 72% 38%,rgba(184,128,58,0.065) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 70% at 18% 65%,rgba(90,130,114,0.05) 0%,transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 5%,rgba(240,204,122,0.04) 0%,transparent 50%);
+  pointer-events:none;
+}
+.hero-inner{
+  max-width:1200px;margin:0 auto;width:100%;
+  display:grid;grid-template-columns:55% 45%;gap:3rem;
+  position:relative;z-index:1;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:0.6rem;
+  margin-bottom:1.8rem;
+  opacity:0;animation:fadeUp 0.8s ease 0.15s forwards;
+}
+.eyebrow-line{width:28px;height:1px;background:var(--gold)}
+.eyebrow-text{
+  font-size:0.72rem;font-weight:700;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--gold);
+}
+.hero h1{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3.2rem,5.5vw,5rem);
+  font-weight:500;line-height:1.06;
+  color:var(--ink);letter-spacing:-0.025em;
+  margin-bottom:1.75rem;
+  opacity:0;animation:fadeUp 0.9s ease 0.3s forwards;
+}
+.hero h1 em{font-style:italic;color:var(--gold);font-weight:300}
+.hero-sub{
+  font-size:1.05rem;color:var(--ink-muted);
+  line-height:1.75;max-width:500px;
+  margin-bottom:2.75rem;
+  opacity:0;animation:fadeUp 0.9s ease 0.48s forwards;
+}
+.hero-actions{
+  display:flex;gap:1rem;align-items:center;
+  opacity:0;animation:fadeUp 0.9s ease 0.62s forwards;
+}
+.btn-primary{
+  background:var(--forest);color:var(--cream);
+  padding:0.9rem 2.1rem;border-radius:9px;
+  font-size:0.9rem;font-weight:600;text-decoration:none;
+  display:inline-flex;align-items:center;gap:0.5rem;
+  transition:all 0.25s;border:none;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.btn-primary:hover{background:var(--forest-light);transform:translateY(-2px);box-shadow:0 10px 28px rgba(12,26,16,0.22)}
+.btn-ghost{
+  color:var(--ink-muted);font-size:0.9rem;font-weight:500;
+  text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;
+  transition:color 0.2s;
+}
+.btn-ghost:hover{color:var(--ink)}
+
+/* HERO VISUAL */
+.hero-visual{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  opacity:0;animation:fadeIn 1.1s ease 0.9s forwards;
+}
+.nl-stack{position:relative;width:340px;height:320px;margin:0 auto}
+.nl-card{
+  position:absolute;width:100%;
+  background:white;border:1px solid var(--border);
+  border-radius:14px;padding:1.25rem 1.5rem;
+  box-shadow:0 4px 24px var(--shadow-md);
+}
+.nl-card-a{top:0;left:0;transform:rotate(-4deg);z-index:1;animation:floatA 7s ease-in-out infinite}
+.nl-card-b{top:50px;left:10px;transform:rotate(1.5deg);z-index:2;animation:floatB 6s ease-in-out infinite}
+.nl-card-c{top:110px;left:4px;transform:rotate(-1deg);z-index:3;animation:floatC 8s ease-in-out infinite}
+.nl-row{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border-light)}
+.nl-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:white;flex-shrink:0}
+.av-g{background:var(--sage)}
+.av-o{background:var(--gold)}
+.av-f{background:var(--forest-soft)}
+.nl-name{font-size:0.78rem;font-weight:600;color:var(--ink);line-height:1.2}
+.nl-sub{font-size:0.68rem;color:var(--ink-light)}
+.nl-pill{
+  margin-left:auto;font-size:0.62rem;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;
+  padding:0.2rem 0.55rem;border-radius:20px;
+}
+.pill-green{background:rgba(90,130,114,0.1);color:var(--sage)}
+.pill-gold{background:rgba(184,128,58,0.1);color:var(--gold)}
+.nl-body-text{font-size:0.75rem;color:var(--ink-muted);line-height:1.5;margin-bottom:0.75rem}
+.nl-rev{display:flex;justify-content:space-between;align-items:flex-end}
+.nl-rev-num{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;color:var(--ink);line-height:1}
+.nl-rev-label{font-size:0.65rem;color:var(--sage);font-weight:600;letter-spacing:0.07em;text-transform:uppercase}
+
+/* RING */
+.ring-wrap{position:absolute;bottom:-10px;right:-30px;z-index:4}
+.rev-ring{
+  width:150px;height:150px;border-radius:50%;
+  background:var(--forest);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 8px 36px rgba(12,26,16,0.35);
+  animation:ringPulse 4s ease-in-out infinite;
+}
+.ring-num{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;color:var(--gold-bright);line-height:1}
+.ring-label{font-size:0.58rem;color:rgba(250,247,240,0.55);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.3rem;text-align:center;line-height:1.4}
+
+/* ── TICKER ROW ── */
+.ticker-row{
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  overflow:hidden;padding:0;
+}
+.ticker-inner{
+  display:flex;align-items:center;
+  animation:ticker 30s linear infinite;
+  white-space:nowrap;
+}
+.ticker-item{
+  display:inline-flex;align-items:center;gap:0.6rem;
+  padding:0.9rem 3rem;
+  font-size:0.78rem;font-weight:500;color:var(--ink-muted);
+  border-right:1px solid var(--border-light);
+  flex-shrink:0;
+}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--gold)}
+
+/* ── STATS ── */
+.stats{
+  max-width:1200px;margin:0 auto;
+  padding:5rem 4rem;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;
+}
+.stat{padding:2.5rem;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:3rem;font-weight:600;color:var(--ink);
+  line-height:1;margin-bottom:0.6rem;
+}
+.stat-num em{font-style:normal;color:var(--gold)}
+.stat-desc{font-size:0.83rem;color:var(--ink-muted);line-height:1.5;max-width:180px}
+
+/* ── PROBLEM ── */
+.problem{
+  background:var(--forest);padding:9rem 4rem;
+  position:relative;overflow:hidden;
+}
+.problem::before{
+  content:'';position:absolute;top:-80px;right:-80px;
+  width:420px;height:420px;
+  background:radial-gradient(circle,rgba(184,128,58,0.1) 0%,transparent 65%);
+  pointer-events:none;
+}
+.problem::after{
+  content:'';position:absolute;bottom:-60px;left:-60px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(90,130,114,0.07) 0%,transparent 65%);
+  pointer-events:none;
+}
+.prob-inner{max-width:1200px;margin:0 auto;position:relative;z-index:1}
+.section-tag{
+  display:inline-flex;align-items:center;gap:0.7rem;
+  font-size:0.7rem;font-weight:700;letter-spacing:0.2em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:1.75rem;
+}
+.section-tag::before{content:'';display:block;width:24px;height:1px;background:var(--gold)}
+.prob-h{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.4rem,4vw,3.8rem);
+  font-weight:400;color:var(--cream);
+  line-height:1.12;margin-bottom:1.25rem;max-width:780px;
+}
+.prob-h em{color:var(--gold-light);font-style:italic;font-weight:300}
+.prob-sub{
+  font-size:1rem;color:rgba(250,247,240,0.45);
+  max-width:540px;line-height:1.75;margin-bottom:5rem;
+}
+.prob-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:18px;overflow:hidden;
+}
+.prob-card{
+  padding:2.75rem 2.5rem;
+  background:rgba(12,26,16,0.75);
+  transition:background 0.35s;position:relative;overflow:hidden;
+}
+.prob-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--gold) 0%,transparent 60%);
+  opacity:0;transition:opacity 0.35s;
+}
+.prob-card:hover{background:rgba(30,60,40,0.85)}
+.prob-card:hover::before{opacity:1}
+.prob-n{
+  font-family:'Cormorant Garamond',serif;
+  font-size:4.5rem;font-weight:300;
+  color:rgba(184,128,58,0.18);line-height:1;
+  margin-bottom:1.25rem;
+}
+.prob-title{font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:0.75rem;line-height:1.35}
+.prob-text{font-size:0.85rem;color:rgba(250,247,240,0.45);line-height:1.75}
+
+/* ── PRODUCT ── */
+.product{padding:9rem 4rem;max-width:1200px;margin:0 auto}
+.prod-header{text-align:center;margin-bottom:5.5rem}
+.prod-header h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.4rem,4vw,3.8rem);
+  font-weight:400;color:var(--ink);
+  margin-bottom:1.1rem;
+}
+.prod-header h2 em{color:var(--gold);font-style:italic;font-weight:300}
+.prod-header p{font-size:1rem;color:var(--ink-muted);max-width:520px;margin:0 auto;line-height:1.75}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.feat-card{
+  background:var(--parchment);border:1px solid var(--border);
+  border-radius:18px;padding:2.75rem 2.5rem;
+  transition:all 0.35s ease;cursor:default;
+  position:relative;overflow:hidden;
+}
+.feat-card::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(184,128,58,0.03) 0%,transparent 60%);
+  opacity:0;transition:opacity 0.35s;
+}
+.feat-card:hover{transform:translateY(-5px);box-shadow:0 18px 48px var(--shadow-md);border-color:var(--gold-bright)}
+.feat-card:hover::after{opacity:1}
+.feat-icon{
+  width:50px;height:50px;background:var(--forest);
+  border-radius:13px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.75rem;
+}
+.feat-icon svg{width:22px;height:22px;stroke:var(--gold-bright);fill:none;stroke-width:1.5}
+.feat-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.45rem;font-weight:600;color:var(--ink);margin-bottom:0.85rem;
+}
+.feat-desc{font-size:0.875rem;color:var(--ink-muted);line-height:1.75;margin-bottom:1.75rem}
+.feat-tag{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:rgba(184,128,58,0.09);color:var(--gold);
+  font-size:0.7rem;font-weight:700;letter-spacing:0.1em;
+  text-transform:uppercase;padding:0.35rem 0.8rem;border-radius:20px;
+}
+
+/* ── VIZ ── */
+.viz{
+  background:var(--parchment);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:9rem 4rem;
+}
+.viz-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:center}
+.viz-content h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2rem,3.5vw,3.1rem);
+  font-weight:400;color:var(--ink);
+  margin-bottom:1.25rem;line-height:1.15;
+}
+.viz-content h2 em{color:var(--gold);font-style:italic;font-weight:300}
+.viz-content p{font-size:1rem;color:var(--ink-muted);line-height:1.75;margin-bottom:2.5rem}
+.check-list{display:flex;flex-direction:column;gap:0.75rem}
+.check-item{
+  display:flex;align-items:center;gap:0.9rem;
+  padding:0.95rem 1.25rem;
+  background:white;border-radius:10px;border:1px solid var(--border);
+  font-size:0.875rem;color:var(--ink);
+}
+.check-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.cd-green{background:var(--sage)}
+.cd-gold{background:var(--gold)}
+.cd-red{background:#C85840}
+
+/* CHART CARD */
+.chart-card{
+  background:white;border:1px solid var(--border);
+  border-radius:22px;padding:2rem;
+  box-shadow:0 10px 40px var(--shadow);
+}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem}
+.chart-labels .title{font-size:0.78rem;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:0.08em}
+.chart-labels .sub{font-size:0.7rem;color:var(--ink-light);margin-top:0.2rem}
+.rev-display .amount{
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.1rem;font-weight:600;color:var(--gold);line-height:1;
+}
+.rev-display .rlabel{font-size:0.65rem;color:var(--ink-light);text-transform:uppercase;letter-spacing:0.08em}
+.bars{display:flex;align-items:flex-end;gap:6px;height:150px;margin-bottom:0.75rem}
+.bar-g{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.3rem;height:100%}
+.bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end;gap:3px}
+.bar{flex:1;border-radius:4px 4px 0 0;transition:height 1.8s cubic-bezier(0.22,1,0.36,1)}
+.bar.curr{background:var(--parchment-mid);border:1px solid var(--border)}
+.bar.poten{background:linear-gradient(180deg,var(--gold-bright) 0%,var(--gold) 100%)}
+.bar-lbl{font-size:0.62rem;color:var(--ink-light)}
+.legend{display:flex;gap:1.25rem;margin-top:0.5rem}
+.leg-item{display:flex;align-items:center;gap:0.4rem;font-size:0.7rem;color:var(--ink-muted)}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+.leg-c{background:var(--parchment-mid);border:1px solid var(--border)}
+.leg-p{background:var(--gold)}
+.segs{margin-top:1.5rem;display:flex;flex-direction:column;gap:0.55rem}
+.seg-row{display:flex;align-items:center;gap:0.75rem}
+.seg-lbl{font-size:0.7rem;color:var(--ink-muted);width:130px;flex-shrink:0}
+.seg-bg{flex:1;height:5px;background:var(--border-light);border-radius:3px;overflow:hidden}
+.seg-fill{height:100%;border-radius:3px;width:0;transition:width 1.8s cubic-bezier(0.22,1,0.36,1)}
+.seg-val{font-size:0.7rem;font-weight:600;color:var(--ink);width:36px;text-align:right}
+
+/* ── WOW ── */
+.wow{
+  padding:9rem 4rem;max-width:1200px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:7rem;align-items:center;
+}
+.wow-content h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2rem,3.5vw,3.1rem);
+  font-weight:400;color:var(--ink);
+  margin-bottom:1.25rem;line-height:1.15;
+}
+.wow-content h2 em{color:var(--gold);font-style:italic;font-weight:300}
+.wow-content p{font-size:1rem;color:var(--ink-muted);line-height:1.75}
+.wow-quote-wrap{
+  margin-top:2.5rem;padding:2.1rem 2rem;
+  background:var(--forest);border-radius:16px;
+  position:relative;overflow:hidden;
+}
+.wow-quote-wrap::before{
+  content:'\201C';
+  font-family:'Cormorant Garamond',serif;
+  font-size:8rem;color:rgba(184,128,58,0.18);
+  position:absolute;top:-20px;left:16px;line-height:1;
+}
+.wow-q{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.35rem;font-style:italic;
+  color:var(--cream);line-height:1.65;font-weight:300;
+  position:relative;z-index:1;
+}
+
+/* INSIGHT CARD */
+.insight-card{
+  background:white;border:1px solid var(--border);
+  border-radius:18px;overflow:hidden;
+  box-shadow:0 10px 48px var(--shadow-md);
+}
+.ic-header{
+  background:var(--forest);padding:1.1rem 1.5rem;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.ic-dots span{
+  display:inline-block;width:10px;height:10px;
+  border-radius:50%;margin-right:4px;
+}
+.ic-dots span:nth-child(1){background:#FF5F57}
+.ic-dots span:nth-child(2){background:#FFBD2E}
+.ic-dots span:nth-child(3){background:#28CA41}
+.ic-title{font-size:0.73rem;color:rgba(250,247,240,0.4);margin-left:0.75rem;font-weight:500}
+.ic-body{padding:1.5rem}
+.ic-row{
+  display:flex;align-items:flex-start;gap:0.75rem;
+  padding:0.85rem 1rem;border-radius:9px;
+  background:var(--parchment);margin-bottom:0.65rem;
+}
+.ic-status{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.st-gray{background:#C8BFB0}
+.st-gold{background:var(--gold)}
+.st-green{background:var(--sage)}
+.ic-info{flex:1}
+.ic-subject{font-size:0.8rem;font-weight:600;color:var(--ink);margin-bottom:0.2rem}
+.ic-meta{font-size:0.68rem;color:var(--ink-light)}
+.ic-action{
+  font-size:0.65rem;font-weight:700;
+  padding:0.2rem 0.55rem;border-radius:20px;flex-shrink:0;margin-top:2px;
+}
+.a-missed{background:rgba(200,88,64,0.08);color:#C85840}
+.a-active{background:rgba(90,130,114,0.1);color:var(--sage)}
+.a-done{background:rgba(184,128,58,0.1);color:var(--gold)}
+.ic-divider{border-top:1px solid var(--border);margin-top:0.5rem;padding-top:1.1rem}
+.ic-tag{font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem}
+.ic-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.45rem}
+.ic-sl{font-size:0.78rem;color:var(--ink-muted)}
+.ic-sv{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:600;color:var(--ink)}
+
+/* ── HOW ── */
+.how{background:var(--forest);padding:9rem 4rem}
+.how-inner{max-width:1200px;margin:0 auto}
+.how-header{text-align:center;margin-bottom:5.5rem}
+.how-header h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.4rem,4vw,3.8rem);
+  font-weight:400;color:var(--cream);margin-bottom:1rem;
+}
+.how-header p{font-size:1rem;color:rgba(250,247,240,0.4);max-width:480px;margin:0 auto;line-height:1.75}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);border-radius:18px;overflow:hidden}
+.step{
+  padding:3rem 2.75rem;background:rgba(12,26,16,0.6);
+  position:relative;transition:background 0.35s;
+}
+.step:hover{background:rgba(33,74,48,0.7)}
+.step-n{
+  font-family:'Cormorant Garamond',serif;
+  font-size:5.5rem;font-weight:300;
+  color:rgba(184,128,58,0.13);line-height:1;
+  position:absolute;top:1.5rem;right:2.25rem;
+}
+.step-icon{
+  width:44px;height:44px;border-radius:11px;
+  background:rgba(184,128,58,0.12);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:1.25rem;
+}
+.step-icon svg{width:20px;height:20px;stroke:var(--gold-light);fill:none;stroke-width:1.5}
+.step-title{font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:0.75rem;line-height:1.35}
+.step-desc{font-size:0.85rem;color:rgba(250,247,240,0.45);line-height:1.75}
+
+/* ── AUDIENCE ── */
+.audience{padding:9rem 4rem;max-width:1200px;margin:0 auto}
+.aud-header{text-align:center;margin-bottom:5.5rem}
+.aud-header h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.4rem,4vw,3.8rem);
+  font-weight:400;color:var(--ink);margin-bottom:1rem;
+}
+.aud-header h2 em{color:var(--gold);font-style:italic;font-weight:300}
+.aud-header p{font-size:1rem;color:var(--ink-muted);max-width:500px;margin:0 auto;line-height:1.75}
+.aud-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+.aud-card{
+  border:1px solid var(--border);border-radius:18px;
+  padding:2.5rem;background:white;
+  transition:all 0.35s;
+}
+.aud-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px var(--shadow-md)}
+.aud-num{
+  font-family:'Cormorant Garamond',serif;
+  font-size:0.85rem;font-weight:600;color:var(--gold);
+  letter-spacing:0.12em;text-transform:uppercase;margin-bottom:1.25rem;
+}
+.aud-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;font-weight:600;color:var(--ink);margin-bottom:0.75rem;
+}
+.aud-desc{font-size:0.875rem;color:var(--ink-muted);line-height:1.75;margin-bottom:1.5rem}
+.aud-range{
+  font-size:0.78rem;font-weight:600;color:var(--forest);
+  padding:0.4rem 0.85rem;background:rgba(12,26,16,0.06);
+  border-radius:6px;display:inline-block;
+}
+
+/* ── PRICING ── */
+.pricing{padding:9rem 4rem;background:var(--parchment);border-top:1px solid var(--border)}
+.pricing-inner{max-width:960px;margin:0 auto}
+.pricing-header{text-align:center;margin-bottom:4.5rem}
+.pricing-header h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.4rem,4vw,3.8rem);
+  font-weight:400;color:var(--ink);margin-bottom:1rem;
+}
+.pricing-header p{font-size:1rem;color:var(--ink-muted);max-width:420px;margin:0 auto;line-height:1.75}
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.pc{
+  background:white;border:1px solid var(--border);
+  border-radius:22px;padding:2.75rem;
+  transition:all 0.35s;
+}
+.pc:hover{transform:translateY(-4px);box-shadow:0 16px 40px var(--shadow-md)}
+.pc-feat{background:var(--forest);border-color:var(--forest);position:relative;overflow:hidden}
+.pc-feat::before{
+  content:'';position:absolute;top:0;right:0;
+  width:220px;height:220px;
+  background:radial-gradient(circle,rgba(184,128,58,0.14) 0%,transparent 65%);
+  pointer-events:none;
+}
+.pc-badge{
+  display:inline-block;font-size:0.68rem;font-weight:700;
+  letter-spacing:0.12em;text-transform:uppercase;
+  padding:0.3rem 0.85rem;border-radius:20px;margin-bottom:1.75rem;
+}
+.badge-base{background:rgba(184,128,58,0.09);color:var(--gold)}
+.badge-feat{background:rgba(184,128,58,0.18);color:var(--gold-bright)}
+.pc-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.5rem;font-weight:600;color:var(--ink);margin-bottom:0.5rem;
+}
+.pc-feat .pc-name{color:var(--cream)}
+.pc-price{
+  font-family:'Cormorant Garamond',serif;
+  font-size:3.2rem;font-weight:500;color:var(--ink);line-height:1;margin-bottom:0.4rem;
+}
+.pc-feat .pc-price{color:var(--gold-bright)}
+.pc-period{font-size:0.8rem;color:var(--ink-light);margin-bottom:2.25rem}
+.pc-feat .pc-period{color:rgba(250,247,240,0.35)}
+.pc-list{list-style:none;margin-bottom:2.75rem}
+.pc-list li{
+  display:flex;align-items:flex-start;gap:0.8rem;
+  font-size:0.875rem;color:var(--ink-muted);
+  margin-bottom:0.8rem;line-height:1.45;
+}
+.pc-feat .pc-list li{color:rgba(250,247,240,0.6)}
+.pc-list li::before{content:'✓';color:var(--sage);font-weight:700;flex-shrink:0}
+.pc-feat .pc-list li::before{color:var(--gold-mid)}
+.pc-btn{
+  width:100%;padding:0.95rem;border-radius:11px;
+  font-size:0.9rem;font-weight:600;text-align:center;
+  cursor:pointer;border:none;transition:all 0.25s;
+  font-family:'Plus Jakarta Sans',sans-serif;
+}
+.btn-outline{
+  background:transparent;border:1.5px solid var(--border);color:var(--ink);
+}
+.btn-outline:hover{border-color:var(--ink);background:var(--ink);color:var(--cream)}
+.btn-gold{background:var(--gold);color:var(--cream)}
+.btn-gold:hover{background:var(--gold-mid);transform:translateY(-1px)}
+
+/* ── FOUNDER ── */
+.founder{
+  padding:7rem 4rem;
+  border-top:1px solid var(--border);
+}
+.founder-inner{max-width:760px;margin:0 auto;text-align:center}
+.founder-av{
+  width:68px;height:68px;border-radius:50%;
+  background:linear-gradient(135deg,var(--forest-light),var(--sage));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 2rem;
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.5rem;font-weight:600;color:var(--cream);
+  box-shadow:0 4px 20px rgba(12,26,16,0.2);
+}
+.founder-note{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;font-style:italic;
+  color:var(--ink);line-height:1.75;font-weight:300;margin-bottom:1.75rem;
+}
+.founder-name{font-size:0.9rem;font-weight:600;color:var(--ink);margin-bottom:0.25rem}
+.founder-role{font-size:0.8rem;color:var(--ink-muted)}
+
+/* ── CTA ── */
+.cta{
+  background:var(--forest);padding:9rem 4rem;
+  text-align:center;position:relative;overflow:hidden;
+}
+.cta::before{
+  content:'';position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  width:700px;height:700px;
+  background:radial-gradient(circle,rgba(184,128,58,0.09) 0%,transparent 55%);
+  pointer-events:none;
+}
+.cta-inner{max-width:660px;margin:0 auto;position:relative;z-index:1}
+.cta h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.6rem,5vw,4.5rem);
+  font-weight:400;color:var(--cream);margin-bottom:1.25rem;
+}
+.cta h2 em{color:var(--gold-light);font-style:italic;font-weight:300}
+.cta p{font-size:1.05rem;color:rgba(250,247,240,0.45);line-height:1.75;margin-bottom:3.5rem}
+.cta-form{display:flex;gap:0.75rem;max-width:480px;margin:0 auto}
+.cta-in{
+  flex:1;padding:0.95rem 1.3rem;
+  background:rgba(250,247,240,0.06);
+  border:1px solid rgba(250,247,240,0.14);
+  border-radius:11px;color:var(--cream);
+  font-size:0.9rem;font-family:'Plus Jakarta Sans',sans-serif;
+  outline:none;transition:border-color 0.2s;
+}
+.cta-in::placeholder{color:rgba(250,247,240,0.28)}
+.cta-in:focus{border-color:rgba(184,128,58,0.55)}
+.cta-sub{
+  background:var(--gold);color:var(--cream);border:none;
+  padding:0.95rem 1.9rem;border-radius:11px;
+  font-size:0.9rem;font-weight:600;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  transition:all 0.25s;white-space:nowrap;
+}
+.cta-sub:hover{background:var(--gold-mid);transform:translateY(-1px)}
+.cta-msg{
+  display:none;margin-top:1.25rem;
+  font-size:0.85rem;color:var(--gold-light);
+}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--forest);
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding:2.5rem 4rem;
+}
+.foot-inner{
+  max-width:1200px;margin:0 auto;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.foot-logo{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;font-weight:600;color:var(--cream);
+}
+.foot-logo span{color:var(--gold)}
+.foot-copy{font-size:0.78rem;color:rgba(250,247,240,0.25)}
+.foot-links{display:flex;gap:2rem}
+.foot-links a{font-size:0.78rem;color:rgba(250,247,240,0.3);text-decoration:none;transition:color 0.2s}
+.foot-links a:hover{color:rgba(250,247,240,0.7)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes floatA{0%,100%{transform:rotate(-4deg) translateY(0)}50%{transform:rotate(-4deg) translateY(-14px)}}
+@keyframes floatB{0%,100%{transform:rotate(1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-9px)}}
+@keyframes floatC{0%,100%{transform:rotate(-1deg) translateY(0)}50%{transform:rotate(-1deg) translateY(-18px)}}
+@keyframes ringPulse{0%,100%{box-shadow:0 8px 36px rgba(12,26,16,0.35)}50%{box-shadow:0 8px 56px rgba(184,128,58,0.28),0 0 0 10px rgba(184,128,58,0.04)}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* SCROLL REVEAL */
+.rv{opacity:0;transform:translateY(32px);transition:opacity 0.75s ease,transform 0.75s ease}
+.rv.on{opacity:1;transform:translateY(0)}
+.rv-1{transition-delay:0.08s}
+.rv-2{transition-delay:0.18s}
+.rv-3{transition-delay:0.28s}
+.rv-4{transition-delay:0.38s}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  nav{padding:1.1rem 1.5rem}
+  nav.scrolled{padding:0.8rem 1.5rem}
+  .nav-links{display:none}
+  .hero{padding:6.5rem 1.5rem 4rem}
+  .hero-inner{grid-template-columns:1fr;gap:4rem}
+  .stats{grid-template-columns:repeat(2,1fr);padding:3rem 1.5rem}
+  .stat{border-bottom:1px solid var(--border)}
+  .problem,.product,.viz,.wow,.how,.audience,.pricing,.founder,.cta{padding:6rem 1.5rem}
+  .prob-grid,.feat-grid,.steps,.aud-grid,.price-grid{grid-template-columns:1fr}
+  .viz-inner,.wow{grid-template-columns:1fr;gap:3.5rem}
+  .foot-inner{flex-direction:column;gap:1.25rem;text-align:center}
+  .foot-links{justify-content:center}
+  .cta-form{flex-direction:column}
+  .nl-stack{width:300px;height:280px}
+}
+</style>
+
+<!-- ██████ NAV ██████ -->
+<nav id="nav">
+  <a href="#" class="logo">nyrex<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#product">Product</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#cta" class="nav-cta">Get Early Access</a></li>
+  </ul>
+</nav>
+
+<!-- ██████ HERO ██████ -->
+<section class="hero" id="home">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">
+        <div class="eyebrow-line"></div>
+        <span class="eyebrow-text">Revenue Intelligence · Newsletters</span>
+      </div>
+      <h1>Your newsletter is a mine. You've been walking through it <em>with a flashlight.</em></h1>
+      <p class="hero-sub">Nyrex is the AI revenue layer that shows every newsletter operator exactly where their money already is — per subscriber, per send, per sponsor slot. No migration. No new tools. Just revenue you've already earned, finally collected.</p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn-primary">Get Early Access &nbsp;→</a>
+        <a href="#product" class="btn-ghost">See how it works &nbsp;↓</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="nl-stack">
+        <!-- Card A -->
+        <div class="nl-card nl-card-a">
+          <div class="nl-row">
+            <div class="nl-av av-g">TB</div>
+            <div>
+              <div class="nl-name">The Brief</div>
+              <div class="nl-sub">47,200 subscribers · Weekly</div>
+            </div>
+            <span class="nl-pill pill-green">Sent</span>
+          </div>
+          <div class="nl-body-text">"The Scaling Playbook" — 3 things every operator does differently in year two...</div>
+          <div class="nl-rev">
+            <div>
+              <div class="nl-rev-label">Revenue identified</div>
+              <div class="nl-rev-num">$6,420</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card B -->
+        <div class="nl-card nl-card-b">
+          <div class="nl-row">
+            <div class="nl-av av-o">MF</div>
+            <div>
+              <div class="nl-name">Market Fog</div>
+              <div class="nl-sub">28,500 subscribers · Daily</div>
+            </div>
+            <span class="nl-pill pill-gold">High Intent</span>
+          </div>
+          <div class="nl-body-text">212 subscribers flagged as ready to convert in the next 10 days...</div>
+          <div class="nl-rev">
+            <div>
+              <div class="nl-rev-label">Projected revenue</div>
+              <div class="nl-rev-num">$4,200</div>
+            </div>
+          </div>
+        </div>
+        <!-- Ring -->
+        <div class="ring-wrap">
+          <div class="rev-ring">
+            <div class="ring-num">$4.2K</div>
+            <div class="ring-label">uncollected<br>revenue found</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ TICKER ██████ -->
+<div class="ticker-row">
+  <div class="ticker-inner" id="ticker">
+    <div class="ticker-item"><div class="ticker-dot"></div>Beehiiv · Substack · ConvertKit · Kit</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Revenue Profile · Per Subscriber · 48hr Audit</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Smart Send Layer · Pre-Send Intelligence</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Sponsor Intent Matching · 2-3× CPM Lift</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Monetization Playbooks · Automated Sequences</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Cross-Network Behavioral Dataset</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Beehiiv · Substack · ConvertKit · Kit</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Revenue Profile · Per Subscriber · 48hr Audit</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Smart Send Layer · Pre-Send Intelligence</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Sponsor Intent Matching · 2-3× CPM Lift</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Monetization Playbooks · Automated Sequences</div>
+    <div class="ticker-item"><div class="ticker-dot"></div>Cross-Network Behavioral Dataset</div>
+  </div>
+</div>
+
+<!-- ██████ STATS ██████ -->
+<div class="stats" id="statsRow">
+  <div class="stat rv">
+    <div class="stat-num"><span id="s1">0</span><em>%</em></div>
+    <div class="stat-desc">average revenue lift in first 60 days of using Nyrex</div>
+  </div>
+  <div class="stat rv rv-1">
+    <div class="stat-num"><span id="s2">0</span><em>%</em></div>
+    <div class="stat-desc">of list subscribers are never monetized to their potential</div>
+  </div>
+  <div class="stat rv rv-2">
+    <div class="stat-num"><em>$</em><span id="s3">0</span><em>K</em></div>
+    <div class="stat-desc">average uncollected revenue found in first 48hr audit</div>
+  </div>
+  <div class="stat rv rv-3">
+    <div class="stat-num"><span id="s4">0</span><em>×</em></div>
+    <div class="stat-desc">higher sponsor CPM when selling intent signals, not just list size</div>
+  </div>
+</div>
+
+<!-- ██████ PROBLEM ██████ -->
+<section class="problem" id="problem">
+  <div class="prob-inner">
+    <div class="section-tag">The Real Problem</div>
+    <h2 class="prob-h rv">40,000 subscribers. $4,200/month. You know you're <em>leaving money on the table.</em> You just can't see where.</h2>
+    <p class="prob-sub rv">Newsletter operators build extraordinary audiences and monetize them like it's 2009. Every subscriber gets the same email. Every sponsor gets the same media kit. The money gap is enormous and invisible.</p>
+    <div class="prob-grid">
+      <div class="prob-card rv">
+        <div class="prob-n">01</div>
+        <div class="prob-title">Every subscriber gets the same email</div>
+        <div class="prob-text">The person who reads every word gets the same experience as the person who opened it by accident on a Tuesday morning. No intelligence. No differentiation. Enormous, quiet waste — every single send.</div>
+      </div>
+      <div class="prob-card rv rv-1">
+        <div class="prob-n">02</div>
+        <div class="prob-title">Sponsorships sold by gut, not by signal</div>
+        <div class="prob-text">You're selling impressions. Brands are paying for demographics. Nobody's talking about what your subscribers are actually trying to solve right now. That gap is exactly why your CPMs are mediocre and your pitches take three follow-ups.</div>
+      </div>
+      <div class="prob-card rv rv-2">
+        <div class="prob-n">03</div>
+        <div class="prob-title">Paid tiers convert at 1–3% and stop there</div>
+        <div class="prob-text">Most creators throw up a Substack paywall and accept 1–3% conversion as a law of nature. It isn't. The other 97% weren't asked right, offered the right thing, or approached at the right moment. That's not a pricing problem. That's an intelligence problem.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ PRODUCT ██████ -->
+<section class="product" id="product">
+  <div class="prod-header rv">
+    <div class="section-tag" style="justify-content:center">What Nyrex Does</div>
+    <h2>Revenue intelligence, built for how <em>newsletters actually work</em></h2>
+    <p>Three products. One revenue layer. Built for operators who treat their newsletter like a business — because it is one.</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card rv">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="feat-title">Smart Send Layer</div>
+      <div class="feat-desc">Before you hit send, Nyrex shows you: 23% of your list is cold — skip or send a reactivation variant. 12% is primed for a paid CTA right now. Here's the version of this email with the highest predicted revenue per send. You approve in one click. It schedules.</div>
+      <span class="feat-tag">↑ 40% Revenue Per Send</span>
+    </div>
+    <div class="feat-card rv rv-1">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+      <div class="feat-title">Sponsor Intelligence</div>
+      <div class="feat-desc">Nyrex reads your list's behavioral DNA — not demographics, but what problems subscribers are actively trying to solve right now. It generates sponsor briefs built around intent signals. Sponsors pay 2–3× more for this than for a standard media kit. And they close faster.</div>
+      <span class="feat-tag">↑ 2–3× Sponsor CPM</span>
+    </div>
+    <div class="feat-card rv rv-2">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      </div>
+      <div class="feat-title">Monetization Playbooks</div>
+      <div class="feat-desc">Nyrex watches your send history and automatically surfaces where money already exists: a topic cluster that spiked engagement but was never monetized, a cohort primed for upsell, a timing window you missed three months ago. It builds the playbook. You approve. Done.</div>
+      <span class="feat-tag">Revenue Already Earned</span>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ VIZ ██████ -->
+<section class="viz" id="intelligence">
+  <div class="viz-inner">
+    <div class="viz-content rv">
+      <div class="section-tag">Revenue Map</div>
+      <h2>The money is already <em>in your list.</em></h2>
+      <p>Most operators are making 30–40% of what their audience is worth. Nyrex builds a Revenue Profile for every subscriber — not a segment, a profile — and shows you exactly where the gap sits and how to close it within the next send cycle.</p>
+      <div class="check-list">
+        <div class="check-item"><div class="check-dot cd-green"></div>Connects to Beehiiv, Substack, ConvertKit, Kit in 20 minutes</div>
+        <div class="check-item"><div class="check-dot cd-gold"></div>Full Revenue Profile built for every subscriber within 48 hours</div>
+        <div class="check-item"><div class="check-dot cd-red"></div>Surfaces uncollected revenue from emails you've already sent</div>
+      </div>
+    </div>
+    <div class="rv rv-1">
+      <div class="chart-card" id="chartCard">
+        <div class="chart-header">
+          <div class="chart-labels">
+            <div class="title">Revenue Potential Map</div>
+            <div class="sub">Current vs. Nyrex-optimized · Per send cycle</div>
+          </div>
+          <div class="rev-display">
+            <div class="amount" id="revCount">$0</div>
+            <div class="rlabel">Gap Identified</div>
+          </div>
+        </div>
+        <div class="bars" id="bars"></div>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot leg-c"></div>Current Revenue</div>
+          <div class="leg-item"><div class="leg-dot leg-p"></div>Nyrex Potential</div>
+        </div>
+        <div class="segs" id="segs"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ WOW ██████ -->
+<section class="wow" id="wow">
+  <div class="wow-content rv">
+    <div class="section-tag">The Wow Moment</div>
+    <h2>Money you already earned. <em>Never collected.</em></h2>
+    <p>In every demo, there's a moment. We pull up a newsletter operator's last six months of send data. We point to a single email — good open rate, seemed like a normal send. Then we show the Nyrex view of that same email. The room goes quiet.</p>
+    <div class="wow-quote-wrap">
+      <div class="wow-q">"So you're telling me there's money I've already earned that I just never collected?"</div>
+    </div>
+  </div>
+  <div class="rv rv-1">
+    <div class="insight-card">
+      <div class="ic-header">
+        <div class="ic-dots"><span></span><span></span><span></span></div>
+        <div class="ic-title">nyrex · Revenue Audit · March sends</div>
+      </div>
+      <div class="ic-body">
+        <div class="ic-row">
+          <div class="ic-status st-gray"></div>
+          <div class="ic-info">
+            <div class="ic-subject">The Scaling Playbook — 38% open rate</div>
+            <div class="ic-meta">847 non-clickers flagged · High-intent buyers: 212</div>
+          </div>
+          <div class="ic-action a-missed">Missed</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-status st-gold"></div>
+          <div class="ic-info">
+            <div class="ic-subject">Nyrex: 3-email nurture generated for 212 flagged</div>
+            <div class="ic-meta">Sent over 10 days · Zero additional content required</div>
+          </div>
+          <div class="ic-action a-active">Active</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-status st-green"></div>
+          <div class="ic-info">
+            <div class="ic-subject">Course sales from that one send, 3 months later</div>
+            <div class="ic-meta">From one email. That already sent. Never followed up on.</div>
+          </div>
+          <div class="ic-action a-done">Collected</div>
+        </div>
+        <div class="ic-divider">
+          <div class="ic-tag">Revenue recovered</div>
+          <div class="ic-stat"><div class="ic-sl">Projected from this sequence</div><div class="ic-sv">$4,200</div></div>
+          <div class="ic-stat"><div class="ic-sl">Subscribers required</div><div class="ic-sv">212</div></div>
+          <div class="ic-stat"><div class="ic-sl">New content needed</div><div class="ic-sv">Zero</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ HOW ██████ -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <div class="how-header rv">
+      <div class="section-tag" style="justify-content:center;color:var(--gold-light)">How It Works</div>
+      <h2>20 minutes to connect. 48 hours to first revenue insight.</h2>
+      <p>No migration. No new ESP. No workflow overhaul. Nyrex sits on top of what you already use and makes it earn more.</p>
+    </div>
+    <div class="steps">
+      <div class="step rv">
+        <div class="step-n">01</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+        </div>
+        <div class="step-title">Connect your ESP</div>
+        <div class="step-desc">Beehiiv, Substack, ConvertKit, Kit — 20-minute OAuth integration. Nyrex pulls your full send history, click patterns, scroll depth, subscriber lifecycle, and reply signals. Nothing leaves your ESP.</div>
+      </div>
+      <div class="step rv rv-1">
+        <div class="step-n">02</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div class="step-title">Nyrex builds Revenue Profiles</div>
+        <div class="step-desc">Within 48 hours, every subscriber has a Revenue Profile. Not a cohort. Not a segment. A profile. Who will buy what, at what price point, with what framing, in what send window. Subscriber-level intelligence at list scale.</div>
+      </div>
+      <div class="step rv rv-2">
+        <div class="step-n">03</div>
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="step-title">Revenue surfaces itself</div>
+        <div class="step-desc">Before every send, Nyrex shows your pre-send optimization. After every send, it flags uncollected revenue from past emails and auto-generates follow-up playbooks. You approve. It executes. Revenue you already earned, finally collected.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ AUDIENCE ██████ -->
+<section class="audience" id="audience">
+  <div class="aud-header rv">
+    <div class="section-tag" style="justify-content:center">Who Buys First</div>
+    <h2>Built for operators who treat their newsletter <em>like a business</em></h2>
+    <p>Nyrex starts with solo operators, moves up to media companies, and ultimately becomes the revenue intelligence layer inside B2B content teams.</p>
+  </div>
+  <div class="aud-grid">
+    <div class="aud-card rv">
+      <div class="aud-num">Wave 01</div>
+      <div class="aud-title">The Solo Operator</div>
+      <div class="aud-desc">10K–100K subscribers. Already making $3K–$15K/month. Treating this like a real business. Knows they're undermonetizing and responds to ROI, not features. They tweet about open rates and LTV. They're already on Beehiiv Premium. They're the first to try, first to talk about it.</div>
+      <span class="aud-range">10K – 100K subscribers</span>
+    </div>
+    <div class="aud-card rv rv-1">
+      <div class="aud-num">Wave 02</div>
+      <div class="aud-title">The Media Company</div>
+      <div class="aud-desc">5–15 person independent media outfit. Multiple newsletters, complex sponsorship mix, editorial and revenue teams that don't talk to each other. Their BD person is still building media kits in Notion. Nyrex becomes their revenue ops layer, and they pay 10× more for it.</div>
+      <span class="aud-range">100K – 1M subscribers</span>
+    </div>
+    <div class="aud-card rv rv-2">
+      <div class="aud-num">Wave 03</div>
+      <div class="aud-title">The B2B Content Team</div>
+      <div class="aud-desc">SaaS companies running newsletters as demand-gen. HubSpot, Intercom, Notion — they have hundreds of thousands of subscribers they're monetizing at maybe 10% efficiency. Nyrex becomes the "newsletter revenue intelligence" line item in their martech stack, no questions asked.</div>
+      <span class="aud-range">Enterprise · Martech budget</span>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ PRICING ██████ -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-header rv">
+      <div class="section-tag" style="justify-content:center">Pricing</div>
+      <h2>Pay when Nyrex pays you back.</h2>
+      <p>Simple pricing that scales with your list and makes sense the moment you see your first Revenue Audit.</p>
+    </div>
+    <div class="price-grid">
+      <div class="pc rv">
+        <div class="pc-badge badge-base">Operator</div>
+        <div class="pc-name">Solo</div>
+        <div class="pc-price">$79</div>
+        <div class="pc-period">per month · up to 50K subscribers</div>
+        <ul class="pc-list">
+          <li>Revenue Profiles for all subscribers</li>
+          <li>Smart Send Layer (pre-send optimization)</li>
+          <li>Monetization Playbooks (automated)</li>
+          <li>3 sponsor intelligence briefs per month</li>
+          <li>Historical Revenue Audit (48hr delivery)</li>
+          <li>Email + chat support</li>
+        </ul>
+        <button class="pc-btn btn-outline">Get Started</button>
+      </div>
+      <div class="pc pc-feat rv rv-1">
+        <div class="pc-badge badge-feat">Most Popular</div>
+        <div class="pc-name">Media</div>
+        <div class="pc-price">$249</div>
+        <div class="pc-period">per month · up to 500K subscribers</div>
+        <ul class="pc-list">
+          <li>Everything in Solo</li>
+          <li>Unlimited sponsor intelligence briefs</li>
+          <li>Cross-network intent benchmarks</li>
+          <li>Sponsor network matching + introductions</li>
+          <li>API access + Zapier integration</li>
+          <li>Multi-newsletter workspace</li>
+          <li>Dedicated revenue strategist (monthly call)</li>
+        </ul>
+        <button class="pc-btn btn-gold">Get Early Access</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ██████ FOUNDER ██████ -->
+<section class="founder">
+  <div class="founder-inner rv">
+    <div class="founder-av">SS</div>
+    <div class="founder-note">"Every newsletter operator I've spoken to knows they're undermonetizing. They know there's money on the table. They just don't have a map. Nyrex is that map — built so that every dollar you've already earned actually gets collected."</div>
+    <div class="founder-name">Sarvagya Singh</div>
+    <div class="founder-role">Founder, Nyrex</div>
+  </div>
+</section>
+
+<!-- ██████ CTA ██████ -->
+<section class="cta" id="cta">
+  <div class="cta-inner">
+    <div class="section-tag" style="justify-content:center;color:var(--gold-light)">Get Early Access</div>
+    <h2>The money is already <em>there.</em></h2>
+    <p>Join the waitlist. We're onboarding newsletter operators who want to see their first Revenue Audit within 48 hours of connecting their ESP. No pitch. No sales call. Just your map.</p>
+    <div class="cta-form">
+      <input type="email" class="cta-in" placeholder="your@newsletter.com" id="emailIn">
+      <button class="cta-sub" onclick="submitEmail()">Join Waitlist &nbsp;→</button>
+    </div>
+    <div class="cta-msg" id="ctaMsg">You're on the list. We'll send your first audit invite within 48 hours.</div>
+  </div>
+</section>
+
+<!-- ██████ FOOTER ██████ -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-logo">nyrex<span>.</span></div>
+    <div class="foot-copy">© 2025 Nyrex · Revenue intelligence for newsletter operators</div>
+    <div class="foot-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#cta">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── NAV SCROLL ── */
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled',window.scrollY>50);
+});
+
+/* ── INTERSECTION OBSERVER ── */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on')});
+},{threshold:0.1});
+document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+/* ── COUNTER ANIMATION ── */
+function animNum(id,from,to,dur,decimals=0){
+  const el=document.getElementById(id);if(!el)return;
+  const start=performance.now();
+  const step=now=>{
+    const t=Math.min((now-start)/dur,1);
+    const e=1-Math.pow(1-t,3);
+    const v=from+(to-from)*e;
+    el.textContent=decimals?v.toFixed(decimals):Math.round(v);
+    if(t<1)requestAnimationFrame(step);
+    else el.textContent=decimals?to.toFixed(decimals):to;
+  };
+  requestAnimationFrame(step);
+}
+
+const statObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      animNum('s1',0,38,1600);
+      animNum('s2',0,67,1600);
+      animNum('s3',0,4,1600);
+      animNum('s4',0,3,1600);
+      statObs.disconnect();
+    }
+  });
+},{threshold:0.3});
+const sr=document.getElementById('statsRow');
+if(sr)statObs.observe(sr);
+
+/* ── CHART ── */
+const barData=[
+  {l:'Jan',c:52,p:83},{l:'Feb',c:45,p:79},{l:'Mar',c:60,p:94},
+  {l:'Apr',c:48,p:86},{l:'May',c:68,p:99},{l:'Jun',c:43,p:81},{l:'Jul',c:55,p:90}
+];
+
+const barsEl=document.getElementById('bars');
+if(barsEl){
+  barData.forEach(d=>{
+    const g=document.createElement('div');
+    g.className='bar-g';
+    g.innerHTML=`<div class="bar-wrap">
+      <div class="bar curr" data-h="${d.c}" style="height:0%"></div>
+      <div class="bar poten" data-h="${d.p}" style="height:0%"></div>
+    </div><div class="bar-lbl">${d.l}</div>`;
+    barsEl.appendChild(g);
+  });
+}
+
+const segsData=[
+  {l:'High-intent buyers',c:'#B8803A',w:72},
+  {l:'Paid-tier ready',c:'#5A8272',w:45},
+  {l:'Sponsor-click likely',c:'#7EA898',w:58},
+  {l:'Needs reactivation',c:'#DFB35A',w:23}
+];
+const segsEl=document.getElementById('segs');
+if(segsEl){
+  segsData.forEach(d=>{
+    const r=document.createElement('div');
+    r.className='seg-row';
+    r.innerHTML=`<div class="seg-lbl">${d.l}</div>
+      <div class="seg-bg"><div class="seg-fill" data-w="${d.w}" style="background:${d.c}"></div></div>
+      <div class="seg-val">${d.w}%</div>`;
+    segsEl.appendChild(r);
+  });
+}
+
+function animRev(){
+  const el=document.getElementById('revCount');
+  if(!el)return;
+  const target=12400,dur=2200,start=performance.now();
+  const step=now=>{
+    const t=Math.min((now-start)/dur,1);
+    const v=Math.round((1-Math.pow(1-t,3))*target);
+    el.textContent='$'+v.toLocaleString();
+    if(t<1)requestAnimationFrame(step);
+    else el.textContent='$12,400';
+  };
+  requestAnimationFrame(step);
+}
+function animBars(){
+  document.querySelectorAll('.bar').forEach(b=>{
+    setTimeout(()=>{b.style.height=b.dataset.h+'%'},100);
+  });
+}
+function animSegs(){
+  document.querySelectorAll('.seg-fill').forEach(f=>{
+    setTimeout(()=>{f.style.width=f.dataset.w+'%'},350);
+  });
+}
+
+const chartObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      animRev();animBars();animSegs();
+      chartObs.disconnect();
+    }
+  });
+},{threshold:0.3});
+const cc=document.getElementById('chartCard');
+if(cc)chartObs.observe(cc);
+
+/* ── EMAIL SUBMIT ── */
+function submitEmail(){
+  const input=document.getElementById('emailIn');
+  const msg=document.getElementById('ctaMsg');
+  if(input&&input.value.includes('@')){
+    msg.style.display='block';
+    input.value='';
+  }
+}
+document.getElementById('emailIn').addEventListener('keydown',e=>{
+  if(e.key==='Enter')submitEmail();
+});
+
+/* ── SMOOTH SCROLL ── */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'})}
+  });
+});
+</script>
+</html>
