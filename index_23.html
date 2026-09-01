@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyrex — Duty position engineering</title>
+<meta name="description" content="Nyrex reconstructs every entry you filed, searches the lawful design space for a better landed cost, and generates the evidence file that defends it.">
+<meta property="og:title" content="Nyrex — Duty position engineering">
+<meta property="og:description" content="Duty is not a fact about your product. It is a position you take. Nyrex computes yours — and the file that defends it.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nyrex.site">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='1.5' y='1.5' width='21' height='21' rx='5' fill='none' stroke='%23E39A3B' stroke-width='1.6'/><rect x='6' y='7' width='12' height='2.4' rx='1.2' fill='%23E39A3B'/><rect x='6' y='11.3' width='8.5' height='2.4' rx='1.2' fill='%23E39A3B'/><rect x='10.5' y='15.6' width='7.5' height='2.4' rx='1.2' fill='%23E39A3B' opacity='.55'/></svg>">
+
+<style>
+/* ============================================================
+   NYREX — design tokens
+   Accent: manifest amber (cargo / stamp ink). Stamp red is used
+   ONLY for duty amounts and alerts, never as UI chrome.
+   ============================================================ */
+:root{
+  --bg:#000;
+  --glass:rgba(16,15,14,.60);
+  --glass-2:rgba(22,20,18,.72);
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.14);
+  --text:#fff;
+  --muted:#A0A09B;
+  --muted-2:#6E6E6A;
+  --accent:#E39A3B;
+  --accent-bright:#FFBC63;
+  --stamp:#E2574A;      /* duty amounts + alerts only */
+  --ok:#5CC08D;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r:16px;
+  --maxw:1240px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-weight:400;font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent);color:#000}
+
+:focus-visible{outline:2px solid var(--accent-bright);outline-offset:3px;border-radius:4px}
+
+/* ---------- layout primitives ---------- */
+.wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding-left:28px;padding-right:28px}
+.band{padding-top:clamp(84px,11vw,148px);padding-bottom:clamp(84px,11vw,148px);position:relative}
+.band--tight{padding-top:clamp(60px,7vw,96px);padding-bottom:clamp(60px,7vw,96px)}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+
+/* ---------- type ---------- */
+h1,h2,h3,h4{font-weight:300;letter-spacing:-.02em;line-height:1.05;margin:0}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 22px
+}
+.h-xl{font-size:clamp(44px,7.2vw,104px)}
+.h-lg{font-size:clamp(34px,4.4vw,62px)}
+.h-md{font-size:clamp(27px,2.7vw,40px)}
+.h-sm{font-size:clamp(20px,1.6vw,25px);font-weight:400;letter-spacing:-.01em;line-height:1.25}
+.lead{color:var(--muted);font-size:17px;font-weight:300;line-height:1.65;max-width:62ch}
+.accent{color:var(--accent)}
+.mono{font-family:var(--mono)}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:13px 26px;border-radius:999px;border:1px solid transparent;
+  font-size:14px;font-weight:500;letter-spacing:-.01em;cursor:pointer;
+  transition:transform .25s ease,background .25s ease,color .25s ease,border-color .25s ease;
+  white-space:nowrap;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn--accent{background:var(--accent);color:#100C06}
+.btn--accent:hover{background:var(--accent-bright)}
+.btn--white{background:#fff;color:#000}
+.btn--white:hover{background:var(--accent-bright);color:#100C06}
+.btn--ghost{border-color:var(--line-2);color:#fff;background:transparent}
+.btn--ghost:hover{border-color:var(--accent);color:var(--accent-bright)}
+.btn--sm{padding:10px 20px;font-size:13px}
+
+/* ---------- glass ---------- */
+.glass{
+  background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--line);border-radius:var(--r);
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav{position:fixed;inset:0 0 auto 0;z-index:60;padding:20px 0;transition:padding .35s ease}
+.nav.scrolled{padding:10px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:11px;transition:opacity .3s ease,transform .35s ease}
+.nav.scrolled .brand{opacity:0;transform:translateX(-10px);pointer-events:none}
+.mark{width:26px;height:26px;color:var(--accent);flex:none}
+.wordmark{font-size:19px;font-weight:500;letter-spacing:.16em;text-transform:uppercase}
+
+.pill{
+  display:flex;align-items:center;gap:6px;padding:7px 7px 7px 16px;border-radius:999px;
+  background:var(--glass-2);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--line);transition:padding .35s ease,gap .35s ease;
+}
+.nav.scrolled .pill{padding:5px 5px 5px 8px}
+.pill-mark{width:0;height:24px;opacity:0;overflow:hidden;color:var(--accent);transition:width .35s ease,opacity .3s ease .05s;flex:none}
+.nav.scrolled .pill-mark{width:24px;opacity:1;margin-right:6px}
+.pill-links{display:flex;align-items:center;gap:4px}
+.pill-links a{
+  position:relative;padding:8px 14px;border-radius:999px;font-size:13.5px;color:var(--muted);
+  transition:color .2s ease
+}
+.pill-links a:hover{color:#fff}
+.pill-links a.active{color:#fff}
+.pill-links a.active::after{
+  content:"";position:absolute;left:50%;bottom:1px;width:4px;height:4px;margin-left:-2px;
+  border-radius:50%;background:var(--accent)
+}
+.hamburger{display:none;width:40px;height:40px;border-radius:999px;border:1px solid var(--line);
+  background:transparent;cursor:pointer;align-items:center;justify-content:center}
+.hamburger span{display:block;width:16px;height:1.5px;background:#fff;position:relative}
+.hamburger span::before,.hamburger span::after{content:"";position:absolute;left:0;width:16px;height:1.5px;background:#fff}
+.hamburger span::before{top:-5px}.hamburger span::after{top:5px}
+.mobile-menu{display:none}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{position:relative;min-height:100svh;display:flex;align-items:flex-end;padding-top:120px}
+.hero-bg{position:absolute;inset:0;overflow:hidden;z-index:0}
+.hero-bg img{width:100%;height:100%;object-fit:cover;filter:grayscale(.28) contrast(1.05) brightness(.42)}
+.hero-bg::after{
+  content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.86) 0%,rgba(0,0,0,.5) 32%,rgba(0,0,0,.78) 72%,#000 100%),
+    linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.18) 60%);
+}
+.hero-inner{position:relative;z-index:2;width:100%;padding-bottom:clamp(120px,17vw,210px)}
+.hero h1{max-width:16ch}
+.hero .sub{margin:28px 0 34px;color:var(--muted);font-size:clamp(16px,1.35vw,19px);font-weight:300;max-width:60ch}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px}
+.hero-meta{
+  display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:38px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)
+}
+.hero-meta span{display:flex;align-items:center;gap:8px}
+.hero-meta i{width:5px;height:5px;border-radius:50%;background:var(--accent);font-style:normal;flex:none}
+
+/* ---------- demo card (overlaps the fold) ---------- */
+.demo-holder{position:relative;z-index:5;margin-top:clamp(-190px,-15vw,-120px);padding-bottom:40px}
+.demo{
+  padding:0;overflow:hidden;
+  box-shadow:0 40px 120px rgba(0,0,0,.85);
+  background:rgba(13,12,11,.72);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+  border:1px solid var(--line-2);border-radius:20px;
+}
+.demo-top{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:14px 20px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)
+}
+.demo-top .live{display:flex;align-items:center;gap:8px;color:var(--accent)}
+.demo-top .live i{width:6px;height:6px;border-radius:50%;background:var(--accent);font-style:normal;
+  animation:blip 2.4s infinite ease-in-out}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+.demo-body{padding:26px 22px 22px}
+.ask{display:flex;gap:14px;margin-bottom:26px}
+.ask .who{
+  flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line-2);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--muted)
+}
+.ask p{margin:0;font-size:16.5px;font-weight:300;line-height:1.55;max-width:70ch}
+.workers{display:flex;flex-direction:column;gap:2px}
+.worker{
+  display:flex;gap:14px;align-items:flex-start;padding:13px 14px;border-radius:12px;
+  border:1px solid transparent;
+  opacity:0;transform:translateY(10px);
+  transition:opacity .6s ease,transform .6s ease,background .3s ease,border-color .3s ease;
+}
+.demo.go .worker{opacity:1;transform:none}
+.demo.go .worker:nth-child(1){transition-delay:.15s}
+.demo.go .worker:nth-child(2){transition-delay:.75s}
+.demo.go .worker:nth-child(3){transition-delay:1.35s}
+.demo.go .worker:nth-child(4){transition-delay:1.95s}
+.worker:hover{background:rgba(255,255,255,.03);border-color:var(--line)}
+.worker .tag{
+  font-family:var(--mono);font-size:12.5px;color:var(--accent);flex:none;width:88px;padding-top:1px
+}
+.worker .txt{font-size:14px;color:#D8D6D2;font-weight:300;line-height:1.5}
+.worker .txt b{font-weight:400;color:#fff}
+.worker .stat{
+  margin-left:auto;flex:none;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted-2);padding-top:3px
+}
+.done{
+  display:flex;align-items:center;gap:12px;margin-top:14px;padding:15px 16px;border-radius:12px;
+  background:rgba(92,192,141,.07);border:1px solid rgba(92,192,141,.22);
+  opacity:0;transform:translateY(10px);transition:opacity .6s ease 2.6s,transform .6s ease 2.6s
+}
+.demo.go .done{opacity:1;transform:none}
+.done .tick{color:var(--ok);font-size:15px;flex:none}
+.done .txt{font-family:var(--mono);font-size:12.5px;color:#CFEBDC;letter-spacing:.02em}
+.done .txt em{font-style:normal;color:var(--ok)}
+.input-bar{
+  display:flex;align-items:center;gap:10px;margin-top:20px;padding:10px 10px 10px 16px;
+  border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.02);flex-wrap:wrap
+}
+.input-bar .ph{font-size:14px;color:var(--muted-2);font-weight:300;margin-right:auto}
+.chip{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:7px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap
+}
+.send{
+  width:36px;height:36px;border-radius:50%;background:var(--accent);color:#100C06;flex:none;
+  display:flex;align-items:center;justify-content:center;border:0;cursor:default
+}
+
+/* ============================================================
+   STATEMENT BANDS
+   ============================================================ */
+.statement{font-size:clamp(28px,3.9vw,54px);font-weight:300;letter-spacing:-.02em;line-height:1.16;max-width:20ch}
+.statement--wide{max-width:24ch}
+.centered{text-align:center;display:flex;flex-direction:column;align-items:center}
+.centered .statement{max-width:22ch}
+.centered .lead{text-align:center;margin-left:auto;margin-right:auto}
+
+/* ---------- duty stack graphic ---------- */
+.stack-card{margin-top:56px;padding:26px;border-radius:18px}
+.stack-head{
+  display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);
+  padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:24px
+}
+.stack-head b{color:#fff;font-weight:400;letter-spacing:.06em}
+.bar{display:flex;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--line-2)}
+.seg{position:relative;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11.5px;color:#0E0B07;font-weight:500}
+.seg--base{background:rgba(255,255,255,.16);color:#fff}
+.seg--301{background:rgba(227,154,59,.42);color:#fff}
+.seg--232{background:var(--accent)}
+.seg--mov{background:var(--stamp);color:#fff}
+.stack-legend{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px}
+.leg{border-top:2px solid var(--line-2);padding-top:12px}
+.leg.l1{border-color:rgba(255,255,255,.3)}
+.leg.l2{border-color:rgba(227,154,59,.5)}
+.leg.l3{border-color:var(--accent)}
+.leg.l4{border-color:var(--stamp)}
+.leg .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.leg .v{font-size:15px;margin-top:5px;font-weight:300}
+.leg .n{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px}
+.leg.l4 .n{color:var(--stamp)}
+
+/* ============================================================
+   SPLIT HEADER + IMAGE/GLASS CARD ROWS
+   ============================================================ */
+.split{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:end;margin-bottom:56px}
+.split .right{display:flex;flex-direction:column;align-items:flex-start;gap:22px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{display:flex;flex-direction:column}
+.shot{
+  position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  aspect-ratio:4/3.35;transition:transform .4s ease,border-color .4s ease,box-shadow .4s ease
+}
+.card:hover .shot{transform:translateY(-6px);border-color:rgba(227,154,59,.36);box-shadow:0 24px 60px rgba(0,0,0,.7)}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  filter:grayscale(.4) brightness(.34) contrast(1.06)}
+.shot::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.82))}
+.panel{
+  position:absolute;z-index:2;left:16px;right:16px;top:16px;bottom:16px;
+  background:rgba(10,9,8,.66);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line-2);border-radius:11px;padding:14px;overflow:hidden;
+  display:flex;flex-direction:column
+}
+.p-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:11px}
+.p-title{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.status{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  padding:4px 8px;border-radius:999px;border:1px solid rgba(227,154,59,.4);color:var(--accent);white-space:nowrap}
+.status--ok{border-color:rgba(92,192,141,.4);color:var(--ok)}
+.status--alert{border-color:rgba(226,87,74,.45);color:var(--stamp)}
+.kv{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:10.5px;
+  padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.07);color:var(--muted)}
+.kv:last-child{border-bottom:0}
+.kv b{color:#fff;font-weight:400}
+.kv .amt{color:var(--stamp)}
+.kv .good{color:var(--ok)}
+.logs{font-family:var(--mono);font-size:10px;line-height:1.85;color:var(--muted-2);margin-top:auto}
+.logs span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logs .hl{color:var(--accent)}
+.mini{display:flex;align-items:flex-end;gap:7px;height:56px;margin:10px 0 8px}
+.mini i{flex:1;background:rgba(255,255,255,.14);border-radius:2px 2px 0 0;font-style:normal;display:block}
+.mini i.on{background:var(--accent)}
+.mini i.red{background:var(--stamp)}
+.grade{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:5px 0}
+.grade .g{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#0E0B07;background:var(--accent);flex:none}
+.grade .g.b{background:rgba(227,154,59,.5);color:#fff}
+.grade .g.c{background:rgba(255,255,255,.16);color:#fff}
+.meter{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+.meter b{display:block;height:100%;background:var(--accent)}
+.card h3{margin:22px 0 10px;font-size:21px;font-weight:400;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:14.5px;font-weight:300;line-height:1.6}
+
+/* ============================================================
+   PILLARS
+   ============================================================ */
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:56px}
+.pillar{background:#0A0908;border:1px solid var(--line);border-radius:14px;padding:26px 22px 28px;
+  position:relative;overflow:hidden;transition:border-color .35s ease,transform .35s ease}
+.pillar:hover{border-color:rgba(227,154,59,.3);transform:translateY(-4px)}
+.pillar::before{content:"";position:absolute;top:0;left:0;height:3px;width:46px;background:var(--accent)}
+.pillar:nth-child(2)::before{background:rgba(227,154,59,.6)}
+.pillar:nth-child(3)::before{background:rgba(255,255,255,.4)}
+.pillar:nth-child(4)::before{background:var(--stamp)}
+.pillar h4{font-size:18px;font-weight:400;margin:16px 0 10px;letter-spacing:-.01em}
+.pillar p{margin:0;color:var(--muted);font-size:14px;font-weight:300;line-height:1.6}
+
+/* ============================================================
+   FOUNDER
+   ============================================================ */
+.founder{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+.portrait{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+  aspect-ratio:4/4.6;background:
+    radial-gradient(120% 80% at 30% 10%,rgba(227,154,59,.14),transparent 60%),
+    linear-gradient(180deg,#0C0B0A,#050505)}
+.portrait .grid{position:absolute;inset:0;opacity:.5;
+  background-image:radial-gradient(rgba(255,255,255,.14) 1px,transparent 1px);background-size:22px 22px}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2}
+.monogram{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:clamp(56px,7vw,86px);color:rgba(227,154,59,.5);letter-spacing:.06em}
+.badge{position:absolute;z-index:3;left:16px;right:16px;bottom:16px;padding:14px 16px;border-radius:12px;
+  background:rgba(10,9,8,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line-2)}
+.badge .n{font-size:17px;font-weight:400;letter-spacing:-.01em}
+.badge .r{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-top:5px}
+.founder-copy p{color:var(--muted);font-weight:300;font-size:16px;line-height:1.72;max-width:60ch}
+.quote{border-left:2px solid var(--accent);padding:6px 0 6px 22px;margin:32px 0;
+  font-size:clamp(19px,1.8vw,24px);font-weight:300;line-height:1.4;letter-spacing:-.01em;max-width:40ch}
+.founder-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+
+/* ============================================================
+   TRUST
+   ============================================================ */
+.trust{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:start;margin-top:44px}
+.tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:30px}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:9px 13px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+.dotgrid{border-radius:16px;border:1px solid var(--line);padding:34px;min-height:230px;
+  background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:24px 24px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:26px}
+.dotgrid .note{font-family:var(--mono);font-size:11px;line-height:1.9;color:var(--muted);letter-spacing:.04em}
+.dotgrid .note b{color:#fff;font-weight:400}
+.dot-cta{display:flex;flex-wrap:wrap;gap:12px}
+
+/* ============================================================
+   FINAL CTA + FOOTER
+   ============================================================ */
+.final{text-align:center;border-top:1px solid var(--line)}
+.final h2{margin:0 auto;max-width:17ch}
+.final .lead{margin:26px auto 34px;text-align:center}
+.final-cta{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}
+
+footer{
+  position:relative;padding-top:80px;overflow:hidden;border-top:1px solid var(--line);
+  background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1px);background-size:26px 26px
+}
+.f-top{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:36px;padding-bottom:60px}
+.f-brand .wordmark{font-size:17px}
+.f-brand p{color:var(--muted);font-size:14px;font-weight:300;margin:16px 0 0;max-width:30ch}
+.f-col h5{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 16px;font-weight:500}
+.f-col a{display:block;color:var(--muted);font-size:14px;padding:5px 0;transition:color .2s ease}
+.f-col a:hover{color:#fff}
+.watermark{
+  font-size:clamp(90px,23vw,300px);font-weight:300;letter-spacing:-.03em;line-height:.8;
+  color:rgba(255,255,255,.035);text-align:center;user-select:none;pointer-events:none;
+  padding:0 0 10px;white-space:nowrap
+}
+.f-bot{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;
+  padding:24px 0 34px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted-2)}
+.f-bot a:hover{color:var(--accent)}
+.disclaimer{padding:0 0 40px;font-family:var(--mono);font-size:10.5px;line-height:1.9;
+  color:var(--muted-2);max-width:80ch;letter-spacing:.03em}
+
+/* ============================================================
+   REVEAL
+   ============================================================ */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:1080px){
+  .cards{grid-template-columns:1fr 1fr}
+  .pillars{grid-template-columns:1fr 1fr}
+  .f-top{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:900px){
+  .pill-links{display:none}
+  .hamburger{display:flex}
+  .nav.scrolled .brand{opacity:1;transform:none;pointer-events:auto}
+  .nav.scrolled .pill-mark{width:0;opacity:0;margin-right:0}
+  .pill{padding:6px 6px 6px 6px}
+  .pill .btn{display:none}
+  .mobile-menu{display:block;position:fixed;z-index:59;left:16px;right:16px;top:78px;
+    padding:14px;border-radius:18px;background:rgba(12,11,10,.94);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line-2);
+    opacity:0;visibility:hidden;transform:translateY(-10px);transition:.3s ease}
+  .mobile-menu.open{opacity:1;visibility:visible;transform:none}
+  .mobile-menu a{display:block;padding:13px 14px;font-size:15px;color:var(--muted);border-radius:10px}
+  .mobile-menu a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .mobile-menu .btn{width:100%;justify-content:center;margin-top:8px;color:#100C06}
+  .split{grid-template-columns:1fr;gap:26px;align-items:start}
+  .founder{grid-template-columns:1fr;gap:36px}
+  .portrait{max-width:400px;aspect-ratio:4/4.4}
+  .trust{grid-template-columns:1fr;gap:34px}
+  .stack-legend{grid-template-columns:1fr 1fr}
+  .demo-holder{margin-top:-90px}
+}
+@media(max-width:680px){
+  .wrap{padding-left:20px;padding-right:20px}
+  .cards{grid-template-columns:1fr}
+  .pillars{grid-template-columns:1fr}
+  .f-top{grid-template-columns:1fr 1fr;gap:28px}
+  .hero{min-height:auto;padding-top:150px}
+  .hero-inner{padding-bottom:110px}
+  .demo-holder{margin-top:-60px}
+  .worker{flex-wrap:wrap;gap:6px 12px}
+  .worker .tag{width:auto}
+  .worker .stat{margin-left:0;width:100%}
+  .shot{aspect-ratio:4/3.6}
+  .bar{height:44px}
+  .seg{font-size:10px}
+  .f-bot{flex-direction:column;gap:8px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal,.worker,.done{opacity:1!important;transform:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== NAV ==================== -->
+<nav class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="Nyrex home">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <rect x="6" y="7" width="12" height="2.4" rx="1.2" fill="currentColor"/>
+        <rect x="6" y="11.3" width="8.5" height="2.4" rx="1.2" fill="currentColor"/>
+        <rect x="10.5" y="15.6" width="7.5" height="2.4" rx="1.2" fill="currentColor" opacity=".55"/>
+      </svg>
+      <span class="wordmark">Nyrex</span>
+    </a>
+
+    <div class="pill">
+      <svg class="pill-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <rect x="6" y="7" width="12" height="2.4" rx="1.2" fill="currentColor"/>
+        <rect x="6" y="11.3" width="8.5" height="2.4" rx="1.2" fill="currentColor"/>
+        <rect x="10.5" y="15.6" width="7.5" height="2.4" rx="1.2" fill="currentColor" opacity=".55"/>
+      </svg>
+      <div class="pill-links" id="navlinks">
+        <a href="#problem">Problem</a>
+        <a href="#method">Method</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#founder">Founder</a>
+        <a href="#trust">Trust</a>
+      </div>
+      <a class="btn btn--accent btn--sm" href="mailto:founder@nyrex.site?subject=Nyrex%20demo">Book a demo</a>
+      <button class="hamburger" id="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobilemenu">
+  <a href="#problem">Problem</a>
+  <a href="#method">Method</a>
+  <a href="#capabilities">Capabilities</a>
+  <a href="#founder">Founder</a>
+  <a href="#trust">Trust</a>
+  <a class="btn btn--accent" href="mailto:founder@nyrex.site?subject=Nyrex%20demo">Book a demo</a>
+</div>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero" id="top">
+  <div class="hero-bg">
+    <!-- Hotlinked from Unsplash for the prototype. Self-host before production. -->
+    <img src="https://images.unsplash.com/photo-1590497008432-598f04441de8?auto=format&fit=crop&w=2400&q=70"
+         alt="Container terminal under a dark sky, cranes loading stacked freight containers">
+  </div>
+
+  <div class="wrap hero-inner">
+    <h1 class="h-xl reveal">Your duty position,<br>computed and defended.</h1>
+    <p class="sub reveal d1">Nyrex rebuilds every entry you filed, searches the lawful design space for a
+      better landed cost, and produces the evidence file that survives the audit three years later.</p>
+    <div class="hero-cta reveal d2">
+      <a class="btn btn--white" href="mailto:founder@nyrex.site?subject=Entry%20summary%20review">Send us your entry summaries</a>
+      <a class="btn btn--ghost" href="#method">See how it works</a>
+    </div>
+    <div class="hero-meta reveal d3">
+      <span><i></i>Classification · Origin · Valuation</span>
+      <span><i></i>Preference, exclusions, drawback</span>
+      <span><i></i>Decision support — not the filer of record</span>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== DEMO CARD ==================== -->
+<div class="wrap demo-holder">
+  <div class="demo reveal" id="demo">
+    <div class="demo-top">
+      <span class="live"><i></i>Position engine — sample session</span>
+      <span>Illustrative. Not customer data.</span>
+    </div>
+
+    <div class="demo-body">
+      <div class="ask">
+        <div class="who">VP</div>
+        <p>4,182 SKUs, final assembly split between Vietnam and Mexico. Rebuild what we actually paid in
+          duty last year by authority — then show me what we can lawfully change, and what we can defend.</p>
+      </div>
+
+      <div class="workers">
+        <div class="worker">
+          <span class="tag">@ledger</span>
+          <span class="txt">Reconstructing <b>11,904 entry summaries</b> from ACE, broker records and commercial invoices</span>
+          <span class="stat">7501 · reconciled</span>
+        </div>
+        <div class="worker">
+          <span class="tag">@classify</span>
+          <span class="txt">Testing <b>3 alternative HTS positions</b> against the CROSS ruling record and GRI order of application</span>
+          <span class="stat">1,207 rulings read</span>
+        </div>
+        <div class="worker">
+          <span class="tag">@origin</span>
+          <span class="txt">Running <b>tariff-shift and substantial transformation</b> across BOM process steps and supplier geography</span>
+          <span class="stat">MX shift satisfied</span>
+        </div>
+        <div class="worker">
+          <span class="tag">@defend</span>
+          <span class="txt">Assembling <b>citations, BOM evidence and valuation support</b> for every position taken</span>
+          <span class="stat">grade a · 173</span>
+        </div>
+      </div>
+
+      <div class="done">
+        <span class="tick">✓</span>
+        <span class="txt">214 positions re-solved · <em>41 escalated to counsel</em> · evidence file ready for review</span>
+      </div>
+
+      <div class="input-bar">
+        <span class="ph">Ask about a SKU, an entry, or a sourcing scenario…</span>
+        <span class="chip">Entry ledger</span>
+        <span class="chip">Refund eligibility</span>
+        <span class="chip">Move assembly</span>
+        <span class="send" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PROBLEM ==================== -->
+<section class="band band--tight" id="problem">
+  <div class="wrap">
+    <p class="eyebrow reveal">The problem</p>
+    <p class="statement statement--wide reveal d1">Most importers treat duty as an output of the supply chain.
+      It is an optimization problem with a legal constraint set — currently solved one lever at a time, by hand,
+      <span class="accent">in a regime that now changes faster than advice can be written.</span></p>
+
+    <div class="stack-card glass reveal d2">
+      <div class="stack-head">
+        <span>Worked example — illustrative</span>
+        <span>SKU <b>WH-4402</b></span>
+        <span>Wire harness, aluminium content <b>34%</b></span>
+        <span>Declared value <b>$412,000</b></span>
+      </div>
+
+      <div class="bar" role="img" aria-label="One SKU's duty, decomposed into four legal components, of which the last is lawfully movable">
+        <div class="seg seg--base" style="flex:1.4">Baseline</div>
+        <div class="seg seg--301" style="flex:2.2">Section 301</div>
+        <div class="seg seg--232" style="flex:2.6">Section 232 — metals content</div>
+        <div class="seg seg--mov" style="flex:3.8">Lawfully movable</div>
+      </div>
+
+      <div class="stack-legend">
+        <div class="leg l1">
+          <div class="k">Baseline surcharge</div>
+          <div class="v">Applies to the portion no other authority covers</div>
+          <div class="n">Fixed</div>
+        </div>
+        <div class="leg l2">
+          <div class="k">Section 301</div>
+          <div class="v">Follows the origin determination, not the shipping route</div>
+          <div class="n">Origin-dependent</div>
+        </div>
+        <div class="leg l3">
+          <div class="k">Section 232</div>
+          <div class="v">Charged on declared metal content, weighted by value</div>
+          <div class="n">A bill-of-materials computation</div>
+        </div>
+        <div class="leg l4">
+          <div class="k">The movable share</div>
+          <div class="v">Classification, origin design, valuation structure, preference claims</div>
+          <div class="n">Where the work is</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="lead reveal d3" style="margin-top:34px">Read that middle segment as an engineer. The duty owed depends
+      on the declared metal content of the product, weighted by value, per SKU, per shipment, against a legal rule.
+      It is done badly by hand and exactly by software — and it is wrong in both directions today.</p>
+  </div>
+</section>
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<section class="band" id="method">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <p class="eyebrow reveal">How it works</p>
+        <h2 class="h-lg reveal d1">Six levers,<br>solved together.</h2>
+      </div>
+      <div class="right">
+        <p class="lead reveal d2">Classification, country of origin, customs value, program claims, deferral and
+          product design all interact — and each one sits with a different function, advised by a different
+          specialist, on a different cycle. Nyrex searches them jointly and grades what it finds.</p>
+        <a class="btn btn--ghost reveal d3" href="mailto:founder@nyrex.site?subject=Nyrex%20method">Walk through the method</a>
+      </div>
+    </div>
+
+    <div class="cards">
+      <article class="card reveal">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1562892302-97faedd66f1c?auto=format&fit=crop&w=1200&q=70" alt="Aerial view of freight containers in a marshalling yard">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Entry ledger — FY25</span><span class="status status--ok">Reconciled</span></div>
+            <div class="kv"><span>ENT-2419-0087 · <b>MX</b></span><span class="amt">$41,208</span></div>
+            <div class="kv"><span>ENT-2419-0088 · <b>VN</b></span><span class="amt">$118,940</span></div>
+            <div class="kv"><span>ENT-2419-0091 · <b>CN</b></span><span class="amt">$302,556</span></div>
+            <div class="kv"><span>Duty by authority</span><span><b>4 authorities</b></span></div>
+            <div class="logs">
+              <span>› parsed 11,904 CBP 7501 summaries</span>
+              <span>› matched 4,182 SKUs to bills of materials</span>
+              <span class="hl">› 1,914 entries missing origin support</span>
+            </div>
+          </div>
+        </div>
+        <h3>The entry ledger</h3>
+        <p>We ingest ACE and broker data, entry summaries, commercial invoices and BOMs, then reconstruct exactly
+          what was paid, on what, under which authority. Most importers cannot answer that today without a
+          two-week fire drill.</p>
+      </article>
+
+      <article class="card reveal d1">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1590496793907-4d66e2994b4d?auto=format&fit=crop&w=1200&q=70" alt="Container ship being loaded by gantry cranes at dusk">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Position engine · SKU WH-4402</span><span class="status">Solving</span></div>
+            <div class="grade"><span class="g">A</span><span>8544.42.9090 — as filed</span><span class="meter"><b style="width:92%"></b></span></div>
+            <div class="grade"><span class="g b">B</span><span>8544.30.0000 — argued</span><span class="meter"><b style="width:61%"></b></span></div>
+            <div class="grade"><span class="g c">C</span><span>Origin re-determined MX</span><span class="meter"><b style="width:38%"></b></span></div>
+            <div class="kv"><span>Landed cost delta</span><span class="good">−$1.42 / unit</span></div>
+            <div class="logs">
+              <span>› GRI 1 then GRI 3(b) applied</span>
+              <span>› 1,207 CROSS rulings weighed</span>
+              <span class="hl">› confidence below floor → counsel</span>
+            </div>
+          </div>
+        </div>
+        <h3>The position engine</h3>
+        <p>Given the bill of materials, the process steps and where they happen, supplier geography and commercial
+          structure, Nyrex searches for the lowest defensible landed cost — and returns a confidence and
+          defensibility grade with every position, never a bare number.</p>
+      </article>
+
+      <article class="card reveal d2">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1606964212858-c215029db704?auto=format&fit=crop&w=1200&q=70" alt="Stacked red and blue shipping containers">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Defensibility file</span><span class="status status--ok">Ready</span></div>
+            <div class="kv"><span>Rulings relied on</span><span><b>HQ H301619</b></span></div>
+            <div class="kv"><span>Case law</span><span><b>CIT 21-00109</b></span></div>
+            <div class="kv"><span>Origin evidence</span><span class="good">BOM + process</span></div>
+            <div class="kv"><span>Valuation support</span><span class="good">Attached</span></div>
+            <div class="kv"><span>Reasoning chain</span><span class="good">Reviewable</span></div>
+            <div class="logs">
+              <span>› built for a CBP auditor, not a board deck</span>
+              <span class="hl">› 41 positions routed to outside counsel</span>
+            </div>
+          </div>
+        </div>
+        <h3>The defensibility file</h3>
+        <p>Every position generates its own evidence package: the rulings and case law relied on, the BOM and
+          process evidence behind the origin claim, the valuation documentation, the reasoning. A saving you
+          cannot defend is a deferred penalty with interest.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== WHAT WE BELIEVE ==================== -->
+<section class="band band--tight">
+  <div class="wrap centered">
+    <p class="eyebrow reveal">What we believe</p>
+    <p class="statement reveal d1">We do not replace your trade counsel.
+      <span class="accent">We tell them where to look.</span></p>
+    <p class="lead reveal d2" style="margin-top:28px">A trade attorney gives a superb answer for the twelve SKUs
+      you asked about. Nyrex gives a good answer for all four thousand — and flags the forty worth an
+      attorney's hour.</p>
+  </div>
+</section>
+
+<!-- ==================== CAPABILITIES ==================== -->
+<section class="band" id="capabilities">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <p class="eyebrow reveal">Capabilities</p>
+        <h2 class="h-lg reveal d1">What you can<br>ask it.</h2>
+      </div>
+      <div class="right">
+        <p class="lead reveal d2">The first answer is usually money already lost. After that, it becomes a standing
+          position on every SKU you import — re-solved when the law moves, and modelled before you move a factory.</p>
+        <a class="btn btn--ghost reveal d3" href="mailto:founder@nyrex.site?subject=Nyrex%20capabilities">Ask about your SKUs</a>
+      </div>
+    </div>
+
+    <div class="cards">
+      <article class="card reveal">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1678182451047-196f22a4143e?auto=format&fit=crop&w=1200&q=70" alt="Freight containers stacked in a port yard">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Leakage &amp; recovery</span><span class="status status--alert">7 findings</span></div>
+            <div class="kv"><span>Unclaimed USMCA preference</span><span class="amt">$1.81M</span></div>
+            <div class="kv"><span>Unfiled 232 exclusions</span><span class="amt">$640K</span></div>
+            <div class="kv"><span>Drawback on re-exports</span><span class="amt">$312K</span></div>
+            <div class="kv"><span>Content declaration errors</span><span class="amt">$204K</span></div>
+            <div class="kv"><span>Refund eligibility</span><span><b>Under review</b></span></div>
+            <div class="logs"><span class="hl">› every finding carries its own evidence</span></div>
+          </div>
+        </div>
+        <h3>Leakage and refund recovery</h3>
+        <p>Against your own filings: unclaimed preference, misclassification in both directions, incorrect
+          valuation basis, uncorrected content declarations, unfiled exclusions, drawback left on the table.
+          Recoverable dollars, computed from documents you already have.</p>
+      </article>
+
+      <article class="card reveal d1">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=1200&q=70" alt="Cargo ships berthed along a container pier">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Regime change log</span><span class="status">Live</span></div>
+            <div class="kv"><span>Authority substituted</span><span class="amt">142 SKUs</span></div>
+            <div class="kv"><span>232 coverage expanded</span><span class="amt">38 SKUs</span></div>
+            <div class="kv"><span>Exclusion window opened</span><span class="good">Action</span></div>
+            <div class="mini"><i style="height:34%"></i><i style="height:52%"></i><i class="red" style="height:96%"></i><i style="height:61%"></i><i style="height:44%"></i><i class="on" style="height:70%"></i><i style="height:38%"></i></div>
+            <div class="logs">
+              <span>› positions re-solved within 24h of change</span>
+              <span class="hl">› delta and required action surfaced per SKU</span>
+            </div>
+          </div>
+        </div>
+        <h3>Continuous re-solution</h3>
+        <p>A duty position is not a filing. Regime changes are monitored, every affected position is
+          re-evaluated automatically, and you learn what moved for <em>your</em> SKUs that week — with the
+          change log published, not buried in a background job.</p>
+      </article>
+
+      <article class="card reveal d2">
+        <div class="shot">
+          <img src="https://images.unsplash.com/photo-1670121180530-cfcba4438038?auto=format&fit=crop&w=1200&q=70" alt="Large cargo ship moored at a dock">
+          <div class="panel">
+            <div class="p-head"><span class="p-title">Sourcing scenario</span><span class="status">4,182 SKUs</span></div>
+            <div class="kv"><span>Assembly in Vietnam</span><span><b>Baseline</b></span></div>
+            <div class="kv"><span>Assembly in Mexico</span><span class="good">Shift satisfied</span></div>
+            <div class="kv"><span>Assembly in Thailand</span><span class="amt">Not satisfied</span></div>
+            <div class="mini"><i style="height:88%"></i><i class="on" style="height:47%"></i><i class="red" style="height:79%"></i></div>
+            <div class="logs">
+              <span>› landed cost modelled across the full SKU set</span>
+              <span class="hl">› tested against substantial transformation</span>
+            </div>
+          </div>
+        </div>
+        <h3>Sourcing simulation</h3>
+        <p>If final assembly moves from Vietnam to Mexico, what happens to landed cost across all 4,182 SKUs —
+          and does the change actually satisfy substantial transformation, or does it only look like it does?
+          Footprint decisions currently model freight precisely and duty approximately.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOUR PILLARS ==================== -->
+<section class="band band--tight">
+  <div class="wrap">
+    <div class="centered">
+      <p class="eyebrow reveal">What you get</p>
+      <h2 class="h-md reveal d1" style="max-width:22ch">Four commitments that hold<br>whether or not you save a dollar.</h2>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar reveal">
+        <span class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--muted-2)">GRADED</span>
+        <h4>Every position is graded</h4>
+        <p>Confidence and defensibility, returned with the number. Anything under the floor is escalated to
+          counsel rather than filed.</p>
+      </div>
+      <div class="pillar reveal d1">
+        <span class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--muted-2)">CITED</span>
+        <h4>Every position is cited</h4>
+        <p>Grounded in specific rulings, CIT decisions and statutory text — reviewable line by line by a person
+          who will have to argue it.</p>
+      </div>
+      <div class="pillar reveal d2">
+        <span class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--muted-2)">RE-SOLVED</span>
+        <h4>Every position is re-solved</h4>
+        <p>When the legal basis moves, your affected SKUs are re-evaluated and the required action is surfaced
+          that week, with a published change log.</p>
+      </div>
+      <div class="pillar reveal d3">
+        <span class="mono" style="font-size:11px;letter-spacing:.16em;color:var(--stamp)">NO CONTINGENCY</span>
+        <h4>We take no share of your savings</h4>
+        <p>Being paid a percentage of duty minimised buys aggression, and you get audited alone three years
+          later. Fixed diagnostic, fixed subscription.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOUNDER ==================== -->
+<section class="band" id="founder">
+  <div class="wrap">
+    <p class="eyebrow reveal">Founder</p>
+    <div class="founder">
+      <div class="portrait reveal">
+        <div class="grid"></div>
+        <div class="monogram">RC</div>
+        <!-- Drop a portrait at assets/founder.jpg and it replaces the monogram automatically. -->
+        <img src="assets/founder.jpg" alt="Rishul Chanana, founder of Nyrex" onerror="this.remove()">
+        <div class="badge">
+          <div class="n">Rishul Chanana</div>
+          <div class="r">Founder · Nyrex</div>
+        </div>
+      </div>
+
+      <div class="founder-copy">
+        <h2 class="h-md reveal d1" style="margin-bottom:26px">The problem was never<br>intelligence. It was coverage.</h2>
+        <p class="reveal d2">Rishul builds systems that read messy operational documents and turn them into
+          decisions. Nyrex started from one observation about import data: almost everything needed to test
+          whether a company overpaid duty is already sitting in its own entry summaries and bills of materials,
+          in a format nobody reads at scale.</p>
+        <p class="reveal d2" style="margin-top:18px">The company is being built with customs counsel and licensed
+          brokers in the loop by design, not as a review step bolted on afterwards. Nyrex is decision support:
+          it narrows four thousand SKUs down to the forty a human should argue about, with the evidence already
+          assembled. It does not render legal opinions and it is not the filer of record.</p>
+
+        <blockquote class="quote reveal d3">A saving you cannot defend is not a saving. It is a deferred penalty
+          with interest.</blockquote>
+
+        <div class="founder-cta reveal d3">
+          <a class="btn btn--accent" href="mailto:founder@nyrex.site?subject=Nyrex">founder@nyrex.site</a>
+          <a class="btn btn--ghost" href="https://www.linkedin.com/in/rishul-chanana/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TRUST & DATA ==================== -->
+<section class="band band--tight" id="trust">
+  <div class="wrap">
+    <p class="eyebrow reveal">Trust &amp; data</p>
+    <h2 class="h-lg reveal d1" style="max-width:16ch">Restraint is the product.</h2>
+
+    <div class="trust">
+      <div>
+        <p class="lead reveal d2">Entry data, bills of materials and supplier geography are among the most
+          sensitive commercial records a company holds — and the buyer here fears a penalty case far more than
+          they want a saving. So the defaults run conservative: positions below the confidence floor go to
+          counsel rather than into a filing, aggressive-but-arguable is flagged as exactly that, and the word
+          our engine is optimising for is <span class="accent">defensible</span>, not minimal.</p>
+        <div class="tags reveal d3">
+          <span class="tag">SOC 2 Type II — in progress</span>
+          <span class="tag">Single-tenant isolation</span>
+          <span class="tag">Role-based access</span>
+          <span class="tag">No training on customer entry data</span>
+          <span class="tag">US data residency</span>
+          <span class="tag">Audit log on every position</span>
+          <span class="tag">Counsel escalation by default</span>
+        </div>
+      </div>
+
+      <div class="dotgrid reveal d2">
+        <p class="note"><b>Scope, stated plainly.</b><br>
+          Nyrex is decision support for your trade function and your counsel.<br>
+          We are not a customs broker. We are not the filer of record.<br>
+          We do not provide legal advice, and we are not paid a share of duty saved.</p>
+        <div class="dot-cta">
+          <a class="btn btn--accent" href="mailto:founder@nyrex.site?subject=Nyrex%20demo">Book a demo</a>
+          <a class="btn btn--ghost" href="mailto:founder@nyrex.site?subject=Security%20review">Security review</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FINAL CTA ==================== -->
+<section class="band final">
+  <div class="wrap">
+    <p class="eyebrow reveal">Get started</p>
+    <h2 class="h-lg reveal d1">Send us last year's entry summaries.<br>We'll tell you what you overpaid.</h2>
+    <p class="lead reveal d2">Before you pay us anything. The diagnostic runs on documents you already have,
+      and the finding comes back with its evidence attached.</p>
+    <div class="final-cta reveal d3">
+      <a class="btn btn--accent" href="mailto:founder@nyrex.site?subject=Entry%20summary%20review">Start the diagnostic</a>
+      <a class="btn btn--ghost" href="#method">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+  <div class="wrap">
+    <div class="f-top">
+      <div class="f-brand">
+        <a class="brand" href="#top" style="opacity:1;transform:none">
+          <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <rect x="6" y="7" width="12" height="2.4" rx="1.2" fill="currentColor"/>
+            <rect x="6" y="11.3" width="8.5" height="2.4" rx="1.2" fill="currentColor"/>
+            <rect x="10.5" y="15.6" width="7.5" height="2.4" rx="1.2" fill="currentColor" opacity=".55"/>
+          </svg>
+          <span class="wordmark">Nyrex</span>
+        </a>
+        <p>Duty position engineering for companies that get audited.</p>
+      </div>
+
+      <div class="f-col">
+        <h5>Product</h5>
+        <a href="#method">Entry ledger</a>
+        <a href="#method">Position engine</a>
+        <a href="#method">Defensibility file</a>
+        <a href="#capabilities">Sourcing simulation</a>
+      </div>
+      <div class="f-col">
+        <h5>Method</h5>
+        <a href="#problem">The duty stack</a>
+        <a href="#capabilities">Leakage &amp; recovery</a>
+        <a href="#capabilities">Continuous re-solution</a>
+        <a href="#trust">Scope &amp; limits</a>
+      </div>
+      <div class="f-col">
+        <h5>Company</h5>
+        <a href="#founder">Founder</a>
+        <a href="#trust">Trust &amp; data</a>
+        <a href="mailto:founder@nyrex.site?subject=Partnership">Brokers &amp; firms</a>
+        <a href="mailto:founder@nyrex.site?subject=Nyrex%20demo">Book a demo</a>
+      </div>
+      <div class="f-col">
+        <h5>Contact</h5>
+        <a href="mailto:founder@nyrex.site">founder@nyrex.site</a>
+        <a href="https://nyrex.site">nyrex.site</a>
+        <a href="https://www.linkedin.com/in/rishul-chanana/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="watermark" aria-hidden="true">NYREX</div>
+
+  <div class="wrap">
+    <div class="f-bot">
+      <span>© 2026 Nyrex</span>
+      <span>Founded by <a href="https://www.linkedin.com/in/rishul-chanana/" target="_blank" rel="noopener">Rishul Chanana</a></span>
+      <span><a href="https://nyrex.site">nyrex.site</a> · <a href="mailto:founder@nyrex.site">founder@nyrex.site</a></span>
+    </div>
+    <p class="disclaimer">Nyrex provides decision support to importers and their advisors. It is not a customs
+      broker, is not the filer of record, and does not provide legal advice. Figures, panels and sessions shown
+      on this page are illustrative and do not represent customer data or a guarantee of outcome.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- scroll reveal ---- */
+  var revealables = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    revealables.forEach(function (el) { el.classList.add('in'); });
+    var d = document.getElementById('demo'); if (d) d.classList.add('go');
+  } else {
+    var ro = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); ro.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    revealables.forEach(function (el) { ro.observe(el); });
+
+    /* ---- demo card worker sequence ---- */
+    var demo = document.getElementById('demo');
+    if (demo) {
+      var dob = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('go'); dob.unobserve(e.target); }
+        });
+      }, { threshold: 0.25 });
+      dob.observe(demo);
+    }
+  }
+
+  /* ---- nav condense ---- */
+  var nav = document.getElementById('nav');
+  var onScroll = function () {
+    if (window.scrollY > 40) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* ---- active link follows scroll ---- */
+  var links = Array.prototype.slice.call(document.querySelectorAll('#navlinks a'));
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var setActive = function () {
+    var y = window.scrollY + window.innerHeight * 0.3;
+    var idx = -1;
+    sections.forEach(function (s, i) { if (s && s.offsetTop <= y) idx = i; });
+    links.forEach(function (a, i) { a.classList.toggle('active', i === idx); });
+  };
+  setActive();
+  window.addEventListener('scroll', setActive, { passive: true });
+
+  /* ---- mobile menu ---- */
+  var burger = document.getElementById('burger');
+  var menu = document.getElementById('mobilemenu');
+  if (burger && menu) {
+    burger.addEventListener('click', function () {
+      var open = menu.classList.toggle('open');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    menu.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') {
+        menu.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
